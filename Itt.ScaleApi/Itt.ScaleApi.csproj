@@ -22,7 +22,6 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <IncludeSymbols>True</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <DefaultPushSource>https://www.nuget.org/api/v2/package</DefaultPushSource>
   </PropertyGroup>
 
   <ItemGroup>
