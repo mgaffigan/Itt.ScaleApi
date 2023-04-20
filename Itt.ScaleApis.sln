@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33213.308
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Itt.ScaleApi.Test", "Itt.OhausApi.Test\Itt.ScaleApi.Test.csproj", "{1E4FF41D-B1AD-40BC-A9F6-7FAD5B464391}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Itt.ScaleApi", "Itt.ScaleApi\Itt.ScaleApi.csproj", "{3DA664FD-A555-42BD-9C0B-B7BC8B939C52}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Assets", "Assets", "{4908EEFD-BFB0-44AF-9168-8B6048DAF7BB}"
+	ProjectSection(SolutionItems) = preProject
+		Readme.md = Readme.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1E4FF41D-B1AD-40BC-A9F6-7FAD5B464391}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1E4FF41D-B1AD-40BC-A9F6-7FAD5B464391}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1E4FF41D-B1AD-40BC-A9F6-7FAD5B464391}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1E4FF41D-B1AD-40BC-A9F6-7FAD5B464391}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3DA664FD-A555-42BD-9C0B-B7BC8B939C52}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DA664FD-A555-42BD-9C0B-B7BC8B939C52}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3DA664FD-A555-42BD-9C0B-B7BC8B939C52}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3DA664FD-A555-42BD-9C0B-B7BC8B939C52}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F52C10A0-86E3-4978-8081-EEDD0AF3355E}
+	EndGlobalSection
+EndGlobal
