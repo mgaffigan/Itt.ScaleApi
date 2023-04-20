@@ -1,5 +1,7 @@
 # ITT ScaleAPI
 
+[![Nuget](https://img.shields.io/nuget/v/Itt.ScaleApi)](https://www.nuget.org/packages/Itt.ScaleApi)
+
 A set of API's for reading from laboratory milligram scales over serial.  Includes 
 tested support for Setra SI-2000S and Ohaus Adventurer.
 
