@@ -9,6 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Itt.ScaleApi", "Itt.ScaleAp
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Assets", "Assets", "{4908EEFD-BFB0-44AF-9168-8B6048DAF7BB}"
 	ProjectSection(SolutionItems) = preProject
+		LICENSE.txt = LICENSE.txt
 		Readme.md = Readme.md
 	EndProjectSection
 EndProject
