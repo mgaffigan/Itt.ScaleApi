@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Itt.ScaleApi
 {
-    internal interface IScale
+    public interface IScale
     {
         bool Stable { get; }
         decimal Weight { get; }
