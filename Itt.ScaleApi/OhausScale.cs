@@ -5,7 +5,8 @@ namespace Itt.ScaleApi;
 // Scale to be configured for auto-print
 // Default RS232 is 2400 7 N 2
 // Preferred is 9600 8 N 1
-// Wait for scale to print a value "    53.98 g     "
+// Wait for scale to print a value "    53.98 g     "        (Adventurer)
+//                              or "       0.01     g     "  (Scout)
 // https://dmx.ohaus.com/WorkArea/showcontent.aspx?id=3348
 public class OhausScale : IDisposable, IScale
 {
@@ -29,6 +30,8 @@ public class OhausScale : IDisposable, IScale
         {
             // "    53.98 g     "
             var data = Port.ReadExisting().Trim();
+            var unstable = data.EndsWith("?", StringComparison.Ordinal);
+            if (unstable) data = data.TrimEnd('?').TrimEnd();
             if (!data.EndsWith(" g"))
             {
                 throw new FormatException($"Unexpected response from scale: '{data}'");
@@ -39,14 +42,26 @@ public class OhausScale : IDisposable, IScale
             {
                 throw new FormatException($"Invalid number format from scale: '{data}'");
             }
-            this.Stable = true;
+            this.Stable = !unstable;
             this.Weight = grams;
-            this.WeightChanged?.Invoke(this, new ScaleMeasurementEventArgs(grams, true));
+            this.WeightChanged?.Invoke(this, new ScaleMeasurementEventArgs(grams, unstable));
         }
         catch (Exception ex)
         {
             Error?.Invoke(this, new UnhandledExceptionEventArgs(ex, false));
         }
+    }
+
+    public void Configure()
+    {
+        // Come out of standby
+        Port.WriteLine("ON");
+        // Enter weigh mode
+        Port.WriteLine("1M");
+        // Configure unit: grams
+        Port.WriteLine("1U");
+        // Enable continuous printing
+        Port.WriteLine("CP");
     }
 
     public void Poll() => Port.Write("P\r\n");

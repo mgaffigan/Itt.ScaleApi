@@ -12,7 +12,13 @@ void HandleReading(object? sender, ScaleMeasurementEventArgs e)
     Console.WriteLine($"{e.Weight,10:0.##} g {stable}");
 }
 
-using (var scale = SiScale.Create9600_8N1("COM8", HandleError))
+//using (var scale = SiScale.Create2400_8N1("COM8", HandleError))
+//{
+//    scale.WeightChanged += HandleReading;
+//    Console.ReadLine();
+//}
+
+using (var scale = OhausScale.Create9600_8N1("COM14", HandleError))
 {
     scale.WeightChanged += HandleReading;
     Console.ReadLine();
