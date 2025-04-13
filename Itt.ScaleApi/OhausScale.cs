@@ -10,8 +10,7 @@ namespace Itt.ScaleApi;
 // https://dmx.ohaus.com/WorkArea/showcontent.aspx?id=3348
 public class OhausScale : IDisposable, IScale
 {
-    private readonly SerialPort Port;
-    private readonly UnhandledExceptionEventHandler? Error;
+    private readonly SerialPortLineReader Port;
 
     public bool Stable { get; private set; } = false;
     public decimal Weight { get; private set; }
@@ -19,37 +18,28 @@ public class OhausScale : IDisposable, IScale
 
     public OhausScale(SerialPort port, UnhandledExceptionEventHandler? error)
     {
-        this.Port = port;
-        this.Error = error;
-        this.Port.DataReceived += Port_DataReceived;
+        this.Port = new SerialPortLineReader(port, error, ProcessData);
     }
 
-    private void Port_DataReceived(object sender, SerialDataReceivedEventArgs e)
+    private void ProcessData(string data)
     {
-        try
+        // "    53.98 g     "
+        data = data.Trim();
+        var unstable = data.EndsWith("?", StringComparison.Ordinal);
+        if (unstable) data = data.TrimEnd('?').TrimEnd();
+        if (!data.EndsWith(" g"))
         {
-            // "    53.98 g     "
-            var data = Port.ReadExisting().Trim();
-            var unstable = data.EndsWith("?", StringComparison.Ordinal);
-            if (unstable) data = data.TrimEnd('?').TrimEnd();
-            if (!data.EndsWith(" g"))
-            {
-                throw new FormatException($"Unexpected response from scale: '{data}'");
-            }
-            data = data.Substring(0, data.Length - " g".Length);
+            throw new FormatException($"Unexpected response from scale: '{data}'");
+        }
+        data = data.Substring(0, data.Length - " g".Length);
 
-            if (!decimal.TryParse(data, out var grams))
-            {
-                throw new FormatException($"Invalid number format from scale: '{data}'");
-            }
-            this.Stable = !unstable;
-            this.Weight = grams;
-            this.WeightChanged?.Invoke(this, new ScaleMeasurementEventArgs(grams, unstable));
-        }
-        catch (Exception ex)
+        if (!decimal.TryParse(data, out var grams))
         {
-            Error?.Invoke(this, new UnhandledExceptionEventArgs(ex, false));
+            throw new FormatException($"Invalid number format from scale: '{data}'");
         }
+        this.Stable = !unstable;
+        this.Weight = grams;
+        this.WeightChanged?.Invoke(this, new ScaleMeasurementEventArgs(grams, !unstable));
     }
 
     public void Configure()

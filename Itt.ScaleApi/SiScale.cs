@@ -1,5 +1,4 @@
 ﻿using System.IO.Ports;
-using System.Text;
 
 namespace Itt.ScaleApi;
 
@@ -11,98 +10,92 @@ namespace Itt.ScaleApi;
 // https://www.setra.com/hubfs/SI%20EL%20Manual%20v.C.pdf
 public class SiScale : IScale, IDisposable
 {
-    private readonly SerialPort Port;
     private readonly UnhandledExceptionEventHandler? Error;
-    private readonly CancellationTokenSource cts;
-    private readonly StreamWriter SS;
-    private readonly StreamReader SR;
-    private readonly Task readTask;
+    private readonly SerialPortLineReader Port;
+    private readonly Timer PollTimer;
+    private bool isDisposed;
+    private readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(250);
 
     public bool Stable { get; private set; }
     public decimal Weight { get; private set; }
     public event EventHandler<ScaleMeasurementEventArgs>? WeightChanged;
-
     public SiScale(SerialPort port, UnhandledExceptionEventHandler? error)
     {
-        this.Port = port;
         this.Error = error;
-        this.cts = new CancellationTokenSource();
-        this.SS = new StreamWriter(port.BaseStream, Encoding.ASCII, leaveOpen: true);
-        this.SR = new StreamReader(port.BaseStream, Encoding.ASCII, leaveOpen: true);
-        this.readTask = RunAsync();
+        this.Port = new SerialPortLineReader(port, error, ProcessData);
+        this.PollTimer = new System.Threading.Timer(PollTimer_Tick, null, 
+            PollInterval, Timeout.InfiniteTimeSpan);
     }
 
-    private async Task RunAsync()
+    private void PollTimer_Tick(object? state)
     {
+        // Scale does not auto-send, poll
         try
         {
-            while (!cts.IsCancellationRequested)
-            {
-                await PrintImmediateReading();
-                HandleReading(await SR.ReadLineAsync(cts.Token) ?? throw new EndOfStreamException("Unexpected end of stream"));
-            }
+            PrintImmediateReading();
         }
-        catch (ObjectDisposedException)
+        catch (IOException ex)
         {
-            // nop
-        }
-        catch (OperationCanceledException)
-        {
-            // nop
+            // Port closed
+            this.Port.Dispose();
+            throw new ObjectDisposedException("Port closed", ex);
         }
         catch (Exception ex)
         {
-            Error?.Invoke(this, new UnhandledExceptionEventArgs(ex, true));
+            this.Error?.Invoke(this, new UnhandledExceptionEventArgs(ex, true));
+        }
+        finally
+        {
+            if (!this.isDisposed)
+            {
+                // Restart the timer
+                this.PollTimer.Change(PollInterval, Timeout.InfiniteTimeSpan);
+            }
         }
     }
 
-    private void HandleReading(string data)
+    private void ProcessData(string data)
     {
-        try
+        // "   -0.02  GS"
+        data = data.Trim();
+        bool stable = data.EndsWith('S');
+        if (stable)
         {
-            // "   -0.02  GS"
-            data = data.Trim();
-            bool stable = data.EndsWith('S');
-            if (stable)
-            {
-                data = data[..^1];
-            }
-            const string SUFFIX = "  G";
-            if (!data.EndsWith(SUFFIX, StringComparison.Ordinal))
-            {
-                // "Fast mode" can cause a different response
-                throw new FormatException($"Unexpected response from scale: '{data}'");
-            }
-            data = data[..^SUFFIX.Length];
+            data = data[..^1];
+        }
+        const string SUFFIX = "  G";
+        if (!data.EndsWith(SUFFIX, StringComparison.Ordinal))
+        {
+            // "Fast mode" can cause a different response
+            throw new FormatException($"Unexpected response from scale: '{data}'");
+        }
+        data = data[..^SUFFIX.Length];
 
-            if (!decimal.TryParse(data, out var grams))
-            {
-                throw new FormatException($"Invalid number format from scale: '{data}'");
-            }
-            this.Weight = grams;
-            this.Stable = stable;
-            this.WeightChanged?.Invoke(this, new ScaleMeasurementEventArgs(grams, stable));
-        }
-        catch (Exception ex)
+        if (!decimal.TryParse(data, out var grams))
         {
-            Error?.Invoke(this, new UnhandledExceptionEventArgs(ex, false));
+            throw new FormatException($"Invalid number format from scale: '{data}'");
         }
+        this.Weight = grams;
+        this.Stable = stable;
+        this.WeightChanged?.Invoke(this, new ScaleMeasurementEventArgs(grams, stable));
     }
 
     //private Task Tare() => WriteCommand("t");
     //private Task PrintStableReading() => WriteCommand("p");
-    private Task PrintImmediateReading() => WriteCommand("#");
-    private async Task WriteCommand(string s)
-    {
-        await SS.WriteAsync(s);
-        await SS.FlushAsync();
-    }
+    private void PrintImmediateReading() => this.Port.WriteLine("#");
 
     public void Dispose()
     {
-        cts.Cancel();
-        this.readTask.Wait();
-        this.Port.Dispose();
+        if (this.isDisposed) return;
+        this.isDisposed = true;
+        try
+        {
+            this.PollTimer.Dispose();
+        }
+        finally
+        {
+            this.Port.Dispose();
+        }
     }
 
     public static SiScale Create2400_8N1(string portName, UnhandledExceptionEventHandler? error)
