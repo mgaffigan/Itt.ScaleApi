@@ -48,16 +48,25 @@ internal sealed class SerialPortLineReader : IDisposable
 
     private void Port_DataReceived(object sender, SerialDataReceivedEventArgs e)
     {
-        while (TryGetNextLine(out var data))
+        try
         {
-            try
+            while (TryGetNextLine(out var data))
             {
-                ProcessData(data);
+                try
+                {
+                    ProcessData(data);
+                }
+                catch (Exception ex)
+                {
+                    // Try again if an individual sample is not valid
+                    Error?.Invoke(this, new UnhandledExceptionEventArgs(ex, false));
+                }
             }
-            catch (Exception ex)
-            {
-                Error?.Invoke(this, new UnhandledExceptionEventArgs(ex, false));
-            }
+        }
+        catch (Exception ex)
+        {
+            // On a threadpool, can't throw.
+            Error?.Invoke(this, new UnhandledExceptionEventArgs(ex, false));
         }
     }
 }
