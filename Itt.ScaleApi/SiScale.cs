@@ -34,9 +34,9 @@ public class SiScale : IScale, IDisposable
         {
             PrintImmediateReading();
         }
-        catch (IOException ex)
+        catch (Exception ex) when (ex is IOException or InvalidOperationException)
         {
-            // Port closed
+            // Port closed or not open
             this.Port.Dispose();
             throw new ObjectDisposedException("Port closed", ex);
         }
